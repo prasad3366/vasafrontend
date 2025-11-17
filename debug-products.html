@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Debug Products API</title>
+    <style>
+        body { font-family: monospace; padding: 20px; background: #f5f5f5; }
+        pre { background: white; padding: 15px; border-radius: 5px; overflow-x: auto; border: 1px solid #ddd; }
+        .error { color: red; }
+        .success { color: green; }
+        button { padding: 10px 20px; margin: 10px 0; background: #0066cc; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        button:hover { background: #0052a3; }
+    </style>
+</head>
+<body>
+    <h1>🔍 Debug: Fetch Admin Products API</h1>
+    
+    <button onclick="fetchProducts()">Fetch /admin/perfumes</button>
+    <button onclick="clearResults()">Clear</button>
+    
+    <div id="results"></div>
+    
+    <script>
+        async function fetchProducts() {
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML = '<p>Loading...</p>';
+            
+            try {
+                const response = await fetch('http://127.0.0.1:5000/admin/perfumes', {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': 'test-token',
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                const data = await response.json();
+                
+                if (!response.ok) {
+                    resultsDiv.innerHTML = `<p class="error"><strong>Error ${response.status}:</strong></p><pre>${JSON.stringify(data, null, 2)}</pre>`;
+                    return;
+                }
+                
+                let html = `<p class="success"><strong>✓ Response received (Status: ${response.status})</strong></p>`;
+                html += `<h3>Full Response:</h3><pre>${JSON.stringify(data, null, 2)}</pre>`;
+                
+                if (data.perfumes && Array.isArray(data.perfumes) && data.perfumes.length > 0) {
+                    html += `<h3>First Product Fields (Keys):</h3><pre>${JSON.stringify(Object.keys(data.perfumes[0]), null, 2)}</pre>`;
+                    html += `<h3>First Product (Full):</h3><pre>${JSON.stringify(data.perfumes[0], null, 2)}</pre>`;
+                    html += `<h3>All Products Count: ${data.perfumes.length}</h3>`;
+                }
+                
+                resultsDiv.innerHTML = html;
+            } catch (err) {
+                resultsDiv.innerHTML = `<p class="error"><strong>Fetch Error:</strong></p><pre>${err.message}\n\n${err.stack}</pre>`;
+            }
+        }
+        
+        function clearResults() {
+            document.getElementById('results').innerHTML = '';
+        }
+    </script>
+</body>
+</html>

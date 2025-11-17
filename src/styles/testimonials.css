@@ -1,0 +1,37 @@
+/* Auto-scrolling testimonials track */
+.testimonials-track-wrapper {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  position: relative;
+}
+.testimonials-track-wrapper::-webkit-scrollbar {
+  height: 8px;
+}
+.testimonials-track-wrapper::-webkit-scrollbar-track {
+  background: transparent;
+}
+.testimonials-track-wrapper::-webkit-scrollbar-thumb {
+  background: rgba(100,116,139,0.45);
+  border-radius: 9999px;
+}
+.testimonials-track {
+  display: flex;
+  gap: 1rem;
+  animation: scroll 40s linear infinite;
+}
+@keyframes scroll {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+/* Pause on hover */
+.testimonials-track:hover {
+  animation-play-state: paused;
+}
+
+/* Respect reduced motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  .testimonials-track {
+    animation: none;
+  }
+}
