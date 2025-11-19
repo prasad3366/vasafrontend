@@ -202,7 +202,6 @@ export default function Checkout() {
           // match backend expected shape
           perfume_id: Number(item.perfume_id ?? item.id),
           quantity: Number(item.quantity || 1),
-          selectedSize: item.selectedSize ?? item.size ?? null,
           price: Number(item.price ?? item.unit_price ?? 0)
         })),
         totalPrice: parseFloat(checkoutTotal.toFixed(2)),
@@ -272,32 +271,33 @@ export default function Checkout() {
         });
       }
 
-      // CRITICAL FIX: Backend clears the entire cart during checkout.
-      // We need to preserve non-ordered items and restore them to localStorage
-      // so they survive the cart refresh after checkout.
+      // Save any remaining items locally in case backend clears the cart during checkout
       try {
         const orderedIds = new Set(checkoutItems.map((it: any) => Number(it.perfume_id ?? it.id)));
-        const remainingItems = cartItems.filter((item: any) => !orderedIds.has(Number(item.perfume_id ?? item.id)));
-        
+        const remainingItems = (cartItems || []).filter((it: any) => !orderedIds.has(Number(it.perfume_id ?? it.id)));
         if (remainingItems.length > 0) {
-          const token = localStorage.getItem('token');
-          if (token) {
-            const payload = JSON.parse(atob(token.split('.')[1]));
-            const userId = payload.user_id;
-            if (userId) {
-              const cartKey = `vasa-cart-${userId}`;
-              const payloadToSave = {
-                source: 'checkout',
-                savedAt: Date.now(),
-                items: remainingItems
-              };
-              localStorage.setItem(cartKey, JSON.stringify(payloadToSave));
-              console.debug('[Checkout] Saved remaining items to localStorage (checkout backup)', { cartKey, count: remainingItems.length });
+          try {
+            const tokenLocal = localStorage.getItem('token');
+            if (tokenLocal) {
+              const payload = JSON.parse(atob(tokenLocal.split('.')[1]));
+              const userId = payload.user_id;
+              if (userId) {
+                const cartKey = `vasa-cart-${userId}`;
+                const payloadToSave = {
+                  source: 'checkout',
+                  savedAt: Date.now(),
+                  items: remainingItems
+                };
+                localStorage.setItem(cartKey, JSON.stringify(payloadToSave));
+                console.debug('[Checkout] Saved remaining items to localStorage (checkout backup)', { cartKey, count: remainingItems.length });
+              }
             }
+          } catch (innerErr) {
+            console.debug('[Checkout] Failed to save remaining items', innerErr);
           }
         }
       } catch (err) {
-        console.debug('[Checkout] Failed to save remaining items', err);
+        console.debug('[Checkout] Failed to compute remaining items', err);
       }
 
   // Remove the single-item checkout marker if present (order completed)
@@ -530,11 +530,10 @@ export default function Checkout() {
                   <div className="space-y-3">
                     {checkoutItems.map((item: any, index: number) => {
                       const id = item.perfume_id ?? item.id ?? index;
-                      const size = item.selectedSize ?? item.size ?? 'default';
                       const imgSrc = item.image ?? item.images?.[0] ?? item.photo_url ?? '/images/placeholder.png';
                       const name = item.name ?? item.perfume_name ?? 'Product';
                       return (
-                        <div key={`${id}-${size}-${index}`} className="flex gap-3">
+                        <div key={`${id}-${index}`} className="flex gap-3">
                           <img
                             src={imgSrc}
                             alt={name}
@@ -547,7 +546,7 @@ export default function Checkout() {
                           <div className="flex-1">
                             <p className="font-medium text-sm">{name}</p>
                             <p className="text-xs text-muted-foreground">
-                              {size} × {item.quantity}
+                              × {item.quantity}
                             </p>
                             <p className="text-sm font-semibold">
                               {formatPriceINR(item.price * item.quantity)}

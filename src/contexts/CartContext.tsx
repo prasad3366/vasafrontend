@@ -5,18 +5,17 @@ import { useAuth } from "./AuthContext";
 interface CartItem extends Product {
   id: number;
   quantity: number;
-  selectedSize: string;
   price: number;
 }
 
 interface CartContextType {
   items: CartItem[];
-  addItem: (product: Product, size: string) => void;
-  // identify items by product id + selectedSize to support multiple variants of same product
-  removeItem: (productId: number, selectedSize?: string) => void;
-  updateQuantity: (productId: number, selectedSize: string, quantity: number) => void;
+  addItem: (product: Product) => void;
+  // identify items by product id (size removed)
+  removeItem: (productId: number) => void;
+  updateQuantity: (productId: number, quantity: number) => void;
   clearCart: () => void;
-  removeItems: (items: { productId: number; selectedSize?: string }[]) => void;
+  removeItems: (items: { productId: number }[]) => void;
   totalItems: number;
   totalPrice: number;
 }
@@ -75,7 +74,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     }
   }, [items, user]);
 
-  const addItem = (product: Product, size: string) => {
+  const addItem = (product: Product) => {
     // require a resolved user id to avoid writing into a wrong key
     if (!user || user.id === undefined || user.id === null) {
       console.warn('[CartContext] addItem aborted: user not resolved yet');
@@ -83,73 +82,54 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     }
     requireAuth(() => {
       setItems(current => {
-        const existing = current.find(item => item.id === product.id && item.selectedSize === size);
+        const existing = current.find(item => item.id === product.id);
         if (existing) {
           return current.map(item =>
-            item.id === product.id && item.selectedSize === size
+            item.id === product.id
               ? { ...item, quantity: item.quantity + 1 }
               : item
           );
         }
-        const newItem = { ...product, quantity: 1, selectedSize: size, size } as any;
+        const newItem = { ...product, quantity: 1 } as any;
         console.debug('[CartContext] adding new item to cart', { newItem });
         return [...current, newItem];
       });
     });
   };
 
-  const removeItem = (productId: number, selectedSize?: string) => {
+  const removeItem = (productId: number) => {
     if (!user || user.id === undefined || user.id === null) {
       console.warn('[CartContext] removeItem aborted: user not resolved yet');
       return;
     }
     requireAuth(() => {
-      // if selectedSize is provided, remove only that variant; otherwise remove all items with the id
-      setItems(current =>
-        current.filter(item => {
-          if (item.id !== productId) return true;
-          if (selectedSize) return item.selectedSize !== selectedSize;
-          return false;
-        })
-      );
+      // remove any items matching the product id (size removed)
+      setItems(current => current.filter(item => item.id !== productId));
     });
   };
 
-  const removeItems = (toRemove: { productId: number; selectedSize?: string }[]) => {
+  const removeItems = (toRemove: { productId: number }[]) => {
     if (!user || user.id === undefined || user.id === null) {
       console.warn('[CartContext] removeItems aborted: user not resolved yet');
       return;
     }
     requireAuth(() => {
       if (!Array.isArray(toRemove) || toRemove.length === 0) return;
-      setItems(current =>
-        current.filter(item => {
-          const shouldRemove = toRemove.some(r => {
-            if (item.id !== r.productId) return false;
-            if (r.selectedSize) return item.selectedSize === r.selectedSize;
-            return true;
-          });
-          return !shouldRemove;
-        })
-      );
+      setItems(current => current.filter(item => !toRemove.some(r => item.id === r.productId)));
     });
   };
 
-  const updateQuantity = (productId: number, selectedSize: string, quantity: number) => {
+  const updateQuantity = (productId: number, quantity: number) => {
     if (!user || user.id === undefined || user.id === null) {
       console.warn('[CartContext] updateQuantity aborted: user not resolved yet');
       return;
     }
     requireAuth(() => {
       if (quantity <= 0) {
-        removeItem(productId, selectedSize);
+        removeItem(productId);
         return;
       }
-      setItems(current =>
-        current.map(item =>
-          item.id === productId && item.selectedSize === selectedSize ? { ...item, quantity } : item
-        )
-      );
+      setItems(current => current.map(item => item.id === productId ? { ...item, quantity } : item));
     });
   };
 

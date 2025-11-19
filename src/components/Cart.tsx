@@ -36,7 +36,7 @@ export default function Cart() {
           <div className="flex flex-col h-full">
             <div className="flex-1 overflow-y-auto py-6 space-y-4">
               {items.map((item) => (
-                <div key={`${item.id}-${item.selectedSize}`} className="flex gap-4 border-b pb-4">
+                <div key={`${item.id}`} className="flex gap-4 border-b pb-4">
                     <img
                       src={(item as any).image ?? "/placeholder.png"}
                       alt={(item as any).name ?? "Product"}
@@ -44,7 +44,7 @@ export default function Cart() {
                     />
                     <div className="flex-1">
                       <h3 className="font-semibold mb-1">{(item as any).name ?? "Product"}</h3>
-                      <p className="text-sm text-muted-foreground mb-2">{item.selectedSize || (item as any).size || (Array.isArray((item as any).sizes) ? (item as any).sizes[0] : "")}</p>
+                      {/* size removed */}
                       <p className="font-bold">{formatPriceINR(item.price)}</p>
                       
                       <div className="flex items-center justify-between mt-2">
@@ -53,7 +53,7 @@ export default function Cart() {
                             size="icon"
                             variant="outline"
                             className="h-8 w-8"
-                            onClick={() => updateQuantity(item.id, item.selectedSize, item.quantity - 1)}
+                            onClick={() => updateQuantity(item.id, item.quantity - 1)}
                             disabled={item.quantity <= 1}
                           >
                             <Minus className="h-3 w-3" />
@@ -63,7 +63,7 @@ export default function Cart() {
                             size="icon"
                             variant="outline"
                             className="h-8 w-8"
-                            onClick={() => updateQuantity(item.id, item.selectedSize, item.quantity + 1)}
+                            onClick={() => updateQuantity(item.id, item.quantity + 1)}
                           >
                             <Plus className="h-3 w-3" />
                           </Button>
@@ -79,7 +79,6 @@ export default function Cart() {
                                 items: [{
                                   ...item,
                                   quantity: item.quantity,
-                                  selectedSize: item.selectedSize,
                                   price: item.price
                                 }],
                                 totalPrice: item.price * item.quantity
@@ -94,7 +93,7 @@ export default function Cart() {
                             size="icon"
                             variant="ghost"
                             className="h-8 w-8"
-                            onClick={() => removeItem(item.id, item.selectedSize)}
+                            onClick={() => removeItem(item.id)}
                           >
                             <Trash2 className="h-4 w-4 text-destructive" />
                           </Button>

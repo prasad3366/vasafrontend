@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { ApiClient } from '@/lib/api-client';
 import { useToast } from '@/hooks/use-toast';
+import formatPriceINR from '@/lib/formatting';
 import {
   Card,
   CardContent,
@@ -518,7 +519,7 @@ const ManageSections = () => {
                     <TableRow key={product.id}>
                       <TableCell>{product.name}</TableCell>
                       <TableCell>{product.category}</TableCell>
-                      <TableCell>${product.price}</TableCell>
+                      <TableCell>{formatPriceINR(product.price)}</TableCell>
                       <TableCell>Best Seller</TableCell>
                       <TableCell>
                         <Button
@@ -598,6 +599,29 @@ const ManageSections = () => {
                   min={new Date().toISOString().split('T')[0]}
                 />
                       </div>
+                      {/* Preview box: show original and computed discounted price */}
+                      <div className="p-4 rounded border bg-green-50">
+                        <div className="text-sm text-muted-foreground mb-2">Preview</div>
+                        <div>
+                          {selectedProduct ? (
+                            (() => {
+                              const original = Number(selectedProduct.price ?? selectedProduct.originalPrice ?? 0) || 0;
+                              const pct = Number(discountPercentage || 0);
+                              const isValidPct = !Number.isNaN(pct) && pct > 0 && pct < 100;
+                              const discounted = isValidPct ? Math.max(0, original * (1 - pct / 100)) : original;
+                              return (
+                                <div>
+                                  <div className="text-sm text-muted-foreground line-through">{formatPriceINR(original)}</div>
+                                  <div className="font-bold text-lg">{formatPriceINR(discounted)}</div>
+                                </div>
+                              );
+                            })()
+                          ) : (
+                            <div className="text-sm text-muted-foreground">Select a product to preview pricing</div>
+                          )}
+                        </div>
+                        <div className="text-sm text-muted-foreground mt-2">This product will appear in the <strong>Special Offers</strong> section when created.</div>
+                      </div>
                       <Button onClick={addSpecialOffer}>Create Special Offer</Button>
                     </div>
                   </DialogContent>
@@ -610,6 +634,7 @@ const ManageSections = () => {
                     <TableHead>Name</TableHead>
                     <TableHead>Original Price</TableHead>
                     <TableHead>Discount</TableHead>
+                    <TableHead>Discount Price</TableHead>
                     <TableHead>End Date</TableHead>
                     <TableHead>Action</TableHead>
                   </TableRow>
@@ -627,8 +652,18 @@ const ManageSections = () => {
                       .map(product => (
                         <TableRow key={product.id}>
                           <TableCell>{product.name}</TableCell>
-                          <TableCell>${product.originalPrice ?? product.price}</TableCell>
-                          <TableCell>{(product.discountPercentage != null && product.discountPercentage !== 0) ? `${product.discountPercentage}%` : '-'}</TableCell>
+                          <TableCell>{formatPriceINR(product.originalPrice ?? product.price)}</TableCell>
+                          <TableCell>{(() => {
+                            const pct = Number(product.discountPercentage ?? (product as any).discount_percentage ?? 0);
+                            return (Number.isFinite(pct) && pct !== 0) ? `${pct}%` : '-';
+                          })()}</TableCell>
+                          <TableCell>{(() => {
+                            const original = Number(product.originalPrice ?? product.price ?? 0) || 0;
+                            const pct = Number(product.discountPercentage ?? (product as any).discount_percentage ?? 0);
+                            const validPct = Number.isFinite(pct) && pct > 0 && pct < 100;
+                            const discounted = validPct ? Math.max(0, original * (1 - pct / 100)) : original;
+                            return formatPriceINR(discounted);
+                          })()}</TableCell>
                           <TableCell>{product.discountEndDate ? new Date(product.discountEndDate).toLocaleDateString() : '-'}</TableCell>
                           <TableCell>
                             <Button
@@ -642,7 +677,7 @@ const ManageSections = () => {
                       ))
                   ) : (
                     <TableRow>
-                      <TableCell colSpan={5} className="text-center py-4">
+                      <TableCell colSpan={6} className="text-center py-4">
                         No special offers yet
                       </TableCell>
                     </TableRow>

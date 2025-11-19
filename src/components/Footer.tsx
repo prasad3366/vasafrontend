@@ -2,6 +2,7 @@ import { Facebook, Instagram, Twitter, Mail, Phone, MapPin } from "lucide-react"
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
+import { Link } from 'react-router-dom';
 
 const Footer = () => {
   return (
@@ -10,7 +11,7 @@ const Footer = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-8">
           {/* Brand */}
           <div>
-            <h3 className="text-2xl font-bold gradient-gold bg-clip-text text-transparent mb-4">
+            <h3 className="text-2xl font-bold mb-4" style={{ color: '#111827' }}>
               VASA
             </h3>
             <p className="text-muted-foreground mb-4">
@@ -44,11 +45,10 @@ const Footer = () => {
           <div>
             <h4 className="font-semibold text-lg mb-4">Customer Care</h4>
             <ul className="space-y-2 text-muted-foreground">
-              <li><a href="#" className="hover:text-primary transition-colors">Contact Us</a></li>
-              <li><a href="#" className="hover:text-primary transition-colors">Shipping & Returns</a></li>
-              <li><a href="#" className="hover:text-primary transition-colors">FAQ</a></li>
-              <li><a href="#" className="hover:text-primary transition-colors">Size Guide</a></li>
-              <li><a href="#" className="hover:text-primary transition-colors">Track Order</a></li>
+              <li><Link to="/contact-us" className="hover:text-primary transition-colors">Contact Us</Link></li>
+              <li><Link to="/shipping-returns" className="hover:text-primary transition-colors">Shipping & Returns</Link></li>
+              <li><Link to="/faq" className="hover:text-primary transition-colors">FAQ</Link></li>
+              <li><Link to="/track-order" className="hover:text-primary transition-colors">Track Order</Link></li>
             </ul>
           </div>
 
@@ -86,9 +86,9 @@ const Footer = () => {
         <div className="flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-muted-foreground">
           <p>&copy; 2025 VASA Perfumes. All rights reserved.</p>
           <div className="flex gap-6">
-            <a href="#" className="hover:text-primary transition-colors">Privacy Policy</a>
-            <a href="#" className="hover:text-primary transition-colors">Terms of Service</a>
-            <a href="#" className="hover:text-primary transition-colors">Cookie Policy</a>
+            <Link to="/privacy-policy" className="hover:text-primary transition-colors">Privacy Policy</Link>
+            <Link to="/terms-of-service" className="hover:text-primary transition-colors">Terms of Service</Link>
+            <Link to="/cookie-policy" className="hover:text-primary transition-colors">Cookie Policy</Link>
           </div>
         </div>
       </div>

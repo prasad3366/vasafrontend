@@ -11,6 +11,7 @@ import { Star, ShoppingCart, Heart } from "lucide-react";
 import { useCart } from "@/contexts/CartContext";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
+import { useLiked } from "@/contexts/LikedContext";
 import { Reviews } from "@/components/Reviews";
 
 export default function ProductDetail() {
@@ -19,8 +20,9 @@ export default function ProductDetail() {
   const { addItem } = useCart();
   const { toast } = useToast();
   const { isAuthenticated } = useAuth();
+  const { isLiked, addToLiked, removeFromLiked } = useLiked();
   const [product, setProduct] = useState(null);
-  const [selectedSize, setSelectedSize] = useState("");
+  // size selection removed
   const [loading, setLoading] = useState(true);
   const [relatedProducts, setRelatedProducts] = useState([]);
 
@@ -34,45 +36,7 @@ export default function ProductDetail() {
           if (import.meta.env.DEV) console.debug('[ProductDetail] perfume fetched:', perfume);
 
           if (perfume) {
-          // Normalize sizes: support array, JSON-stringified array, comma-separated string or single value
-          let sizesArr: string[] = [];
-          try {
-            console.log('[ProductDetail] Raw perfume.size:', perfume.size, 'Type:', typeof perfume.size);
-            if (Array.isArray(perfume.size)) {
-              sizesArr = perfume.size.map((s: any) => String(s).trim()).filter(Boolean);
-              console.log('[ProductDetail] Sizes from array:', sizesArr);
-            } else if (typeof perfume.size === "string") {
-              const raw = perfume.size.trim();
-              console.log('[ProductDetail] Raw size string:', raw);
-              // try JSON parse first (handles ["50ml","100ml"] format)
-              try {
-                const parsed = JSON.parse(raw);
-                if (Array.isArray(parsed)) {
-                  sizesArr = parsed.map((s: any) => String(s).trim()).filter(Boolean);
-                  console.log('[ProductDetail] Sizes from JSON array:', sizesArr);
-                } else {
-                  sizesArr = [String(parsed).trim()].filter(Boolean);
-                  console.log('[ProductDetail] Sizes from JSON single value:', sizesArr);
-                }
-              } catch (e) {
-                // not JSON: try comma-separated
-                if (raw.includes(",")) {
-                  sizesArr = raw.split(",").map(s => s.trim()).filter(Boolean);
-                  console.log('[ProductDetail] Sizes from comma-separated string:', sizesArr);
-                } else if (raw.length) {
-                  sizesArr = [raw];
-                  console.log('[ProductDetail] Sizes from single string:', sizesArr);
-                }
-              }
-            } else if (perfume.size != null) {
-              sizesArr = [String(perfume.size).trim()].filter(Boolean);
-              console.log('[ProductDetail] Sizes from other type:', sizesArr);
-            }
-            console.log('[ProductDetail] Final sizesArr:', sizesArr);
-          } catch (err) {
-            console.error('Failed to parse perfume.size', perfume.id, err);
-            sizesArr = [];
-          }
+          // size removed from product model; no size parsing required
 
           // Robustly normalize numeric rating and reviews from multiple possible API shapes
           const tryGetNumber = (obj: any, keys: string[]) => {
@@ -113,14 +77,13 @@ export default function ProductDetail() {
               heart: perfume.heart_notes ? perfume.heart_notes.split(",") : [],
               base: perfume.base_notes ? perfume.base_notes.split(",") : [],
             },
-            size: sizesArr.length ? sizesArr : ["50ml"],
+            // size removed from product model
             isBestSeller: perfume.is_best_seller ?? false,
             isNew: perfume.is_new ?? false,
             isSale: perfume.is_sale ?? false,
           });
 
-          // preselect first available size if none selected yet
-          if (sizesArr.length) setSelectedSize(sizesArr[0]);
+          // size removed: no preselection
 
           // Fetch reviews and compute average from actual review records (ensure product detail reflects true average)
           try {
@@ -191,17 +154,10 @@ export default function ProductDetail() {
   }
 
   const handleAddToCart = () => {
-    if (!selectedSize) {
-      toast({
-        title: "Please select a size",
-        variant: "destructive",
-      });
-      return;
-    }
-    addItem(product, selectedSize);
+    addItem(product);
     toast({
       title: "Added to cart",
-      description: `${product.name} (${selectedSize}) has been added to your cart.`,
+      description: `${product.name} has been added to your cart.`,
     });
   };
 
@@ -287,35 +243,41 @@ export default function ProductDetail() {
               </div>
             </Card>
 
-            {/* Size Selection */}
-            <div className="space-y-3">
-              <h3 className="font-semibold">Select Size</h3>
-                <div className="flex flex-wrap gap-3">
-                  {product.size && product.size.map((size: string) => (
-                    <Button
-                      key={size}
-                      variant={selectedSize === size ? "default" : "outline"}
-                      onClick={() => setSelectedSize(size)}
-                      className={`min-w-[96px] px-4 ${selectedSize === size ? "gradient-primary" : ""}`}
-                    >
-                      {size}
-                    </Button>
-                  ))}
-                </div>
-            </div>
+            {/* Size selection removed */}
 
             {/* Add to Cart */}
             <div className="flex gap-3">
               <Button
-                className="flex-1 gradient-primary text-primary-foreground"
+                className="w-52 gradient-primary text-primary-foreground justify-center"
                 size="lg"
                 onClick={handleAddToCart}
               >
                 <ShoppingCart className="mr-2 h-5 w-5" />
                 Add to Cart
               </Button>
-              <Button variant="outline" size="lg">
-                <Heart className="h-5 w-5" />
+              <Button
+                variant="outline"
+                size="lg"
+                onClick={async () => {
+                  const pid = String(product.id);
+                  if (!isAuthenticated) {
+                    toast({ title: 'Please log in', description: 'You must be logged in to add favourites', variant: 'destructive' });
+                    navigate('/login');
+                    return;
+                  }
+                  try {
+                    if (isLiked(pid)) {
+                      await removeFromLiked(pid);
+                    } else {
+                      await addToLiked(pid);
+                    }
+                  } catch (e) {
+                    console.error('Failed to toggle liked state', e);
+                  }
+                }}
+                aria-pressed={isLiked(String(product.id))}
+              >
+                <Heart className={`h-5 w-5 ${isLiked(String(product.id)) ? 'text-red-500 fill-red-500' : ''}`} />
               </Button>
             </div>
 

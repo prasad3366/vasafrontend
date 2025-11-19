@@ -9,7 +9,7 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:5000';
 
 export class ApiClient {
   // Cart endpoints
-  static async addToCart(items: { perfume_id: number; quantity: number; size?: string }[], token?: string) {
+  static async addToCart(items: { perfume_id: number; quantity: number }[], token?: string) {
     if (!token) throw new Error('Authentication required');
     return this.request('/cart', {
       method: 'POST',
@@ -101,6 +101,48 @@ export class ApiClient {
 
   static async adminGetAllCarts(token?: string) {
     return this.request('/admin/carts', {
+      method: 'GET',
+      headers: token ? { Authorization: token } : {},
+    });
+  }
+
+  // Admin analytics endpoints
+  static async adminGetSalesReport(startDate?: string | undefined, endDate?: string | undefined, token?: string) {
+    // Backend supports `days` param; if startDate and endDate provided compute days difference
+    let query = '';
+    try {
+      if (startDate && endDate) {
+        const s = new Date(startDate);
+        const e = new Date(endDate);
+        const diffDays = Math.max(1, Math.ceil((e.getTime() - s.getTime()) / (1000 * 60 * 60 * 24)));
+        query = `?days=${diffDays}`;
+      } else if (startDate && !endDate) {
+        // compute days from startDate until today
+        const s = new Date(startDate);
+        const e = new Date();
+        const diffDays = Math.max(1, Math.ceil((e.getTime() - s.getTime()) / (1000 * 60 * 60 * 24)));
+        query = `?days=${diffDays}`;
+      }
+    } catch (e) {
+      // fallback to default
+      query = '';
+    }
+
+    return this.request(`/admin/sales/report${query}`, {
+      method: 'GET',
+      headers: token ? { Authorization: token } : {},
+    });
+  }
+
+  static async adminGetPerfumeRevenue(perfumeId: number, days = 30, token?: string) {
+    return this.request(`/admin/revenue/perfume/${perfumeId}?days=${days}`, {
+      method: 'GET',
+      headers: token ? { Authorization: token } : {},
+    });
+  }
+
+  static async adminGetMonthlyRevenue(token?: string) {
+    return this.request('/admin/revenue/monthly', {
       method: 'GET',
       headers: token ? { Authorization: token } : {},
     });
@@ -263,7 +305,7 @@ export class ApiClient {
         heart: p.heart_notes ? p.heart_notes.split(',').map((n: string) => n.trim()) : [],
         base: p.base_notes ? p.base_notes.split(',').map((n: string) => n.trim()) : []
       },
-      sizes: p.size ? [p.size] : ['50ml'],
+      // `size` removed from product model
       inStock: p.available === 1 && (p.quantity > 0),
       created_at: p.created_at,
       // Keep both snake_case and camelCase flags for compatibility across codebase
@@ -634,12 +676,7 @@ export class ApiClient {
     });
   }
 
-  static async adminGetSalesReport(startDate?: string, endDate?: string, token?: string) {
-    const query = startDate && endDate ? `?start=${startDate}&end=${endDate}` : '';
-    return this.request(`/admin/sales/report${query}`, {
-      headers: token ? { Authorization: token } : {},
-    });
-  }
+  // Duplicate adminGetSalesReport removed: use the earlier implementation that supports `days` calculation.
 
   // Reviews endpoints
   static async getRecentReviews() {

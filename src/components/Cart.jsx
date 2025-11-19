@@ -22,7 +22,7 @@ export default function Cart() {
         console.error('Item not found:', productId);
         return;
       }
-      await updateQuantity(productId, item.size, newQuantity);
+      await updateQuantity(productId, newQuantity);
     } catch (error) {
       toast({
         title: "Error",
@@ -40,7 +40,7 @@ export default function Cart() {
         console.error('Item not found:', productId);
         return;
       }
-      await removeItem(productId, item.size);
+      await removeItem(productId);
     } catch (error) {
       toast({
         title: "Error",
@@ -96,7 +96,7 @@ export default function Cart() {
           <div className="flex flex-col h-full">
             <div className="flex-1 overflow-y-auto py-6 space-y-4">
               {items.map((item) => (
-                <div key={`${item.perfume_id}-${item.size}`} className="flex gap-4 border-b pb-4">
+                <div key={`${item.perfume_id}`} className="flex gap-4 border-b pb-4">
                   <img
                     src={item.photo_url || item.image}
                     alt={item.perfume_name || item.name}
@@ -104,7 +104,7 @@ export default function Cart() {
                   />
                   <div className="flex-1">
                     <h3 className="font-semibold mb-1">{item.perfume_name || item.name}</h3>
-                    <p className="text-sm text-muted-foreground mb-2">{item.size}ml</p>
+                    {/* size removed */}
                       <p className="font-bold">{formatPriceINR(item.price)}</p>
                     
                     <div className="flex items-center gap-2 mt-2">
@@ -135,16 +135,15 @@ export default function Cart() {
                           size="sm"
                           className="h-8"
                           onClick={() => {
-                            const singleItemCart = {
-                              items: [{
-                                ...item,
-                                quantity: item.quantity,
-                                price: item.price,
-                                perfume_id: item.perfume_id,
-                                size: item.size
-                              }],
-                              totalPrice: item.price * item.quantity
-                            };
+                                const singleItemCart = {
+                                  items: [{
+                                    ...item,
+                                    quantity: item.quantity,
+                                    price: item.price,
+                                    perfume_id: item.perfume_id
+                                  }],
+                                  totalPrice: item.price * item.quantity
+                                };
                             sessionStorage.setItem('checkout-item', JSON.stringify(singleItemCart));
                             navigate('/checkout');
                           }}

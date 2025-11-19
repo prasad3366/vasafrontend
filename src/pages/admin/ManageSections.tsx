@@ -20,6 +20,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
+import formatPriceINR from '@/lib/formatting';
 import {
   Select,
   SelectContent,
@@ -314,7 +315,7 @@ const ManageSections = () => {
             {specialOffers.map((product) => (
               <TableRow key={product.id}>
                 <TableCell>{product.name}</TableCell>
-                <TableCell>${product.originalPrice}</TableCell>
+                <TableCell>{formatPriceINR(product.originalPrice)}</TableCell>
                 <TableCell>{product.discountPercentage}%</TableCell>
                 <TableCell>{product.discountEndDate?.toLocaleDateString()}</TableCell>
                 <TableCell>

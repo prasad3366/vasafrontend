@@ -1,12 +1,30 @@
 import React from 'react'
-import Navbar from '../components/Navbar.jsx'
+import Navbar from '@/components/Navbar'
+import { useAuth } from '@/contexts/AuthContext'
+import { Link } from 'react-router-dom'
 import Footer from '../components/Footer.tsx'
 // FAQ removed from About page per request
 
 export default function About() {
+  const { user } = useAuth ? useAuth() : { user: null };
+
   return (
     <div className="min-h-screen bg-gray-50">
-      <Navbar />
+      {user?.isAdmin ? (
+        <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur">
+          <nav className="container mx-auto px-4">
+            <div className="flex h-16 items-center justify-between">
+              <Link to="/" className="flex items-center">
+                <h1 className="text-3xl md:text-4xl font-brand font-black tracking-wider bg-gradient-to-r from-accent to-yellow-600 bg-clip-text text-transparent">
+                  VASA
+                </h1>
+              </Link>
+            </div>
+          </nav>
+        </header>
+      ) : (
+        <Navbar />
+      )}
       <main className="max-w-7xl mx-auto px-4 py-16">
         {/* Top hero: About VASA Perfume */}
         <section className="text-center mb-12">
@@ -41,8 +59,8 @@ export default function About() {
         </section>
 
         <h1 className="text-4xl font-black text-center mb-12">What Makes Us Special</h1>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16">
-          <div className="bg-white rounded-xl shadow p-8 flex flex-col items-center">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16 items-stretch">
+          <div className="bg-white rounded-xl shadow p-8 flex flex-col items-center text-black h-full overflow-hidden">
             {/* Perfume bottle SVG icon 1 */}
             <div className="mb-6">
               <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -51,10 +69,10 @@ export default function About() {
                 <rect x="21" y="6" width="6" height="6" rx="2" fill="#F59E42" />
               </svg>
             </div>
-            <h2 className="text-2xl font-semibold text-center mb-2">Signature Scents</h2>
-            <p className="text-center text-muted-foreground">Our perfumes are crafted with unique blends, creating memorable fragrances that stand out in any collection.</p>
+            <h2 className="text-2xl font-semibold text-center mb-2 text-black">Signature Scents</h2>
+            <p className="text-center text-gray-700 font-medium leading-relaxed">Our perfumes are crafted with unique blends, creating memorable fragrances that stand out in any collection.</p>
           </div>
-          <div className="bg-white rounded-xl shadow p-8 flex flex-col items-center">
+          <div className="bg-white rounded-xl shadow p-8 flex flex-col items-center text-black h-full overflow-hidden">
             {/* Perfume bottle SVG icon 2 */}
             <div className="mb-6">
               <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -63,10 +81,10 @@ export default function About() {
                 <rect x="22" y="8" width="4" height="6" rx="2" fill="#F59E42" />
               </svg>
             </div>
-            <h2 className="text-2xl font-semibold text-center mb-2">Premium Ingredients</h2>
-            <p className="text-center text-muted-foreground">We source only the finest essential oils and natural extracts to ensure every bottle meets our luxury standards.</p>
+            <h2 className="text-2xl font-semibold text-center mb-2 text-black">Premium Ingredients</h2>
+            <p className="text-center text-gray-700 font-medium leading-relaxed">We source only the finest essential oils and natural extracts to ensure every bottle meets our luxury standards.</p>
           </div>
-          <div className="bg-white rounded-xl shadow p-8 flex flex-col items-center">
+          <div className="bg-white rounded-xl shadow p-8 flex flex-col items-center text-black h-full overflow-hidden">
             {/* Perfume bottle SVG icon 3 */}
             <div className="mb-6">
               <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -75,8 +93,8 @@ export default function About() {
                 <rect x="22" y="6" width="4" height="6" rx="2" fill="#F59E42" />
               </svg>
             </div>
-            <h2 className="text-2xl font-semibold text-center mb-2">Artisan Craftsmanship</h2>
-            <p className="text-center text-muted-foreground">Each perfume is blended and bottled by hand, maintaining the artistry and tradition of fine perfumery.</p>
+            <h2 className="text-2xl font-semibold text-center mb-2 text-black">Artisan Craftsmanship</h2>
+            <p className="text-center text-gray-700 font-medium leading-relaxed">Each perfume is blended and bottled by hand, maintaining the artistry and tradition of fine perfumery.</p>
           </div>
         </div>
         {/* ...no Contact Us button... */}

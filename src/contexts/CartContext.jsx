@@ -80,7 +80,6 @@ export function CartProvider({ children }) {
                       perfume_name: item.perfume_name || item.name,
                       price: Number(item.price),
                       quantity: Number(item.quantity),
-                      size: item.size,
                       photo_url: item.photo_url || item.image,
                       in_stock: item.in_stock !== false
                     }));
@@ -111,7 +110,6 @@ export function CartProvider({ children }) {
         perfume_name: item.perfume_name || item.name,
         price: Number(item.price),
         quantity: Number(item.quantity),
-        size: item.size,
         photo_url: item.photo_url || item.image,
         in_stock: item.in_stock !== false
       }));
@@ -151,7 +149,7 @@ export function CartProvider({ children }) {
   }, [token]);
 
   // Add item to cart
-  const addItem = async (product, size) => {
+  const addItem = async (product) => {
     if (!isAuthenticated || !token) {
       toast({
         title: 'Authentication Required',
@@ -170,7 +168,6 @@ export function CartProvider({ children }) {
         perfume_name: product.name,
         price: product.price,
         quantity: 1,
-        size: size,
         photo_url: product.image,
         in_stock: true
       };
@@ -179,8 +176,7 @@ export function CartProvider({ children }) {
 
       const res = await ApiClient.addToCart([{ 
         perfume_id: product.id, 
-        quantity: 1,
-        size: size
+        quantity: 1
       }], token);
       
       // Fetch the latest cart state from server to ensure consistency
@@ -217,19 +213,15 @@ export function CartProvider({ children }) {
   };
 
   // Remove item from cart
-  const removeItem = async (productId, size) => {
+  const removeItem = async (productId) => {
     if (!isAuthenticated) return;
 
     try {
       setIsLoading(true);
-      console.debug('[CartContext] removeItem', { productId, size });
+      console.debug('[CartContext] removeItem', { productId });
       
       // 1. Update local state IMMEDIATELY (optimistic update)
-      setCartItems(current => 
-        current.filter(item => 
-          !(item.perfume_id === productId && item.size === size)
-        )
-      );
+      setCartItems(current => current.filter(item => item.perfume_id !== productId));
 
       // 2. Try to sync with server, but don't fail if it's not there
       try {
@@ -262,25 +254,19 @@ export function CartProvider({ children }) {
   };
 
   // Update quantity
-  const updateQuantity = async (productId, size, quantity) => {
+  const updateQuantity = async (productId, quantity) => {
     if (!isAuthenticated) return;
     if (quantity <= 0) {
-      await removeItem(productId, size);
+      await removeItem(productId);
       return;
     }
 
     try {
       setIsLoading(true);
-      console.debug('[CartContext] updateQuantity', { productId, size, quantity, token });
+      console.debug('[CartContext] updateQuantity', { productId, quantity, token });
       
       // First update local state to maintain order
-      setCartItems(current => 
-        current.map(item =>
-          item.perfume_id === productId && item.size === size
-            ? { ...item, quantity }
-            : item
-        )
-      );
+      setCartItems(current => current.map(item => item.perfume_id === productId ? { ...item, quantity } : item));
 
       // First remove existing item
       await ApiClient.removeFromCart(productId, token);
@@ -288,8 +274,7 @@ export function CartProvider({ children }) {
       // Then add with new quantity - wrap perfume_id in Number() to ensure it's numeric
       const res = await ApiClient.addToCart([{
         perfume_id: Number(productId),
-        quantity: Number(quantity),
-        size: String(size)
+        quantity: Number(quantity)
       }], token);
       
       console.debug('[CartContext] updateQuantity response:', res);
@@ -337,16 +322,7 @@ export function CartProvider({ children }) {
       }
 
       // After server confirms removals, update local state
-      setCartItems(current =>
-        current.filter(item => {
-          const shouldRemove = toRemove.some(r => {
-            if (item.perfume_id !== r.productId) return false;
-            if (r.selectedSize) return item.size === r.selectedSize;
-            return true;
-          });
-          return !shouldRemove;
-        })
-      );
+      setCartItems(current => current.filter(item => !toRemove.some(r => item.perfume_id === r.productId)));
     } catch (error) {
       console.error('Error removing items from cart:', error);
       // Refresh from server on error to maintain consistency

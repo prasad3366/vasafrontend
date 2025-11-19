@@ -1,15 +1,15 @@
 import React, { useEffect, useState } from 'react';
-import AdminNavigation from '@/components/admin/AdminNavigation';
 import Navbar from '@/components/Navbar';
+import AdminNavigation from '@/components/admin/AdminNavigation';
 import { Button } from '@/components/ui/button';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { ApiClient } from '@/lib/api-client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 
 const AdminReviews = () => {
   const { token } = useAuth();
-  const [reviewsByPerfume, setReviewsByPerfume] = useState({} as Record<string, any>);
+  const [allReviews, setAllReviews] = useState<any[]>([]);
+  const [groupedReviews, setGroupedReviews] = useState<Record<string, any[]>>({});
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
@@ -17,17 +17,26 @@ const AdminReviews = () => {
     if (!token) return;
     setLoading(true);
     try {
-      const res = await ApiClient.adminGetAllReviews(token);
-      // Expecting { total_reviews, reviews_by_perfume }
-      const grouped = res.reviews_by_perfume || {};
-      setReviewsByPerfume(grouped);
+      const data = await ApiClient.adminGetAllReviews(token);
+      // Expect shape: { total_reviews, reviews_by_perfume: { [perfume_id]: { perfume_name, reviews: [...] } } }
+      let grouped: Record<string, any[]> = {};
+      if (data && typeof data === 'object' && data.reviews_by_perfume) {
+        Object.values(data.reviews_by_perfume).forEach((group: any) => {
+          const name = group.perfume_name || 'Unknown Product';
+          if (!grouped[name]) grouped[name] = [];
+          if (Array.isArray(group.reviews)) {
+            grouped[name].push(...group.reviews);
+          }
+        });
+      }
+      setGroupedReviews(grouped);
     } catch (err: any) {
-      console.error('Failed to load admin reviews', err);
-      toast({ title: 'Error', description: 'Failed to load reviews', variant: 'destructive' });
+      toast({ title: 'Error', description: err?.message || 'Failed to load reviews', variant: 'destructive' });
     } finally {
       setLoading(false);
     }
   };
+
 
   useEffect(() => {
     loadReviews();
@@ -39,7 +48,6 @@ const AdminReviews = () => {
     try {
       await ApiClient.adminDeleteReview(reviewId, token);
       toast({ title: 'Deleted', description: 'Review deleted' });
-      // reload
       await loadReviews();
     } catch (err: any) {
       console.error('Failed to delete review', err);
@@ -52,46 +60,38 @@ const AdminReviews = () => {
       <Navbar />
       <div className="container mx-auto p-8">
         <AdminNavigation />
-        <h1 className="text-3xl font-bold mb-6">Customer Reviews</h1>
+        <h1 className="text-3xl font-bold mb-6">All Customer Reviews</h1>
 
         {loading && <div>Loading...</div>}
 
-        {Object.keys(reviewsByPerfume).length === 0 && !loading && (
-          <div className="text-muted-foreground">No reviews found.</div>
+        {Object.keys(groupedReviews).length === 0 && !loading && (
+          <div className="text-muted-foreground mb-4">No customer reviews found for any products.</div>
         )}
 
-        {Object.entries(reviewsByPerfume).map(([perfumeId, data]) => (
-          <section key={perfumeId} className="mb-8">
-            <h2 className="text-xl font-semibold mb-2">{data.perfume_name}</h2>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Review ID</TableHead>
-                  <TableHead>User</TableHead>
-                  <TableHead>Rating</TableHead>
-                  <TableHead>Comment</TableHead>
-                  <TableHead>Created At</TableHead>
-                  <TableHead>Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {data.reviews.map((r: any) => (
-                  <TableRow key={r.id}>
-                    <TableCell>{r.id}</TableCell>
-                    <TableCell>{r.user_name} ({r.user_id})</TableCell>
-                    <TableCell>{r.rating}</TableCell>
-                    <TableCell className="max-w-xl truncate">{r.comment}</TableCell>
-                    <TableCell>{r.created_at}</TableCell>
-                    <TableCell>
-                      <Button variant="destructive" size="sm" onClick={() => handleDelete(r.id)}>
-                        Delete
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </section>
+        {Object.entries(groupedReviews).map(([productName, reviews]) => (
+          <div key={productName} className="bg-white rounded-lg shadow border mb-8">
+            <div className="flex items-center justify-between px-6 pt-4 pb-2 border-b">
+              <div className="font-semibold text-lg">{productName}</div>
+              <div className="text-sm text-gray-500">{reviews.length} review(s)</div>
+            </div>
+            {reviews.map((r: any) => (
+              <div key={r.id} className="px-6 py-4 flex flex-col md:flex-row md:items-center md:justify-between border-b last:border-b-0">
+                <div className="flex-1">
+                  <div className="font-bold">{r.user_name || r.user || 'Unknown'}
+                    <span className="ml-2 text-xs text-gray-500">{r.user_email || r.email || ''}</span>
+                  </div>
+                  <div className="text-xs text-gray-500 mb-1">{r.created_at || r.date || ''}</div>
+                  <div className="mb-1">Rating: {r.rating} / 5</div>
+                  <div className="text-sm">{r.comment || r.content || ''}</div>
+                </div>
+                <div className="mt-2 md:mt-0 md:ml-4">
+                  <Button variant="destructive" size="sm" onClick={() => handleDelete(r.id)}>
+                    Delete
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </div>
         ))}
       </div>
     </div>

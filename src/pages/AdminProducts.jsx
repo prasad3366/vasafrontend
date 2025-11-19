@@ -266,10 +266,7 @@ export default function AdminProducts() {
     reValidateMode: 'onBlur',
   });
   const { reset, control, setValue, getValues, handleSubmit, trigger } = form;
-  // Local sizes state to avoid interference from other form setters and guarantee empty default
-  const [sizesSelected, setSizesSelected] = useState([]);
-  const [sizeVersion, setSizeVersion] = useState(0);
-  const [sizeInput, setSizeInput] = useState(''); // Input field for custom sizes
+  // `size` field removed — size-related local state omitted
 
   // Only reset the form when we exit edit mode
   useEffect(() => {
@@ -288,7 +285,7 @@ export default function AdminProducts() {
         discounted_price: "",
         end_date: "",
       });
-      setSizesSelected([]);
+      // size state removed
       if (import.meta.env.DEV) console.log('[AdminProducts] Form reset - not in edit mode');
     }
   }, [editingId]);
@@ -309,205 +306,11 @@ export default function AdminProducts() {
     });
     if (import.meta.env.DEV) console.log('[AdminProducts] (mount useEffect) reset called');
   }, []);
-  useEffect(() => {
-    // ensure local sizesSelected cleared on mount
-    setSizesSelected([]);
-  }, []);
+  // mount-only reset done above; no size state to clear
 
-  const onSubmit = async (data) => {
-    console.log('[AdminProducts] ===== SUBMIT START =====');
-    console.log('[AdminProducts] onSubmit called with data:', data);
-    console.log('[AdminProducts] data.size type:', typeof data.size, 'value:', data.size);
-    console.log('[AdminProducts] sizesSelected STATE:', sizesSelected);
-    console.log('[AdminProducts] sizesSelected is array?:', Array.isArray(sizesSelected));
-    console.log('[AdminProducts] sizesSelected length:', sizesSelected?.length);
-    
-    const title = (data.title || "").trim();
-    if (!title) {
-      console.error('[AdminProducts] Title is empty:', data.title);
-      toast({ title: 'Error', description: 'Title is required' });
-      return;
-    }
-    
-    // Validate sizes - ONLY use sizesSelected state, not data.size
-    console.log('[AdminProducts] onSubmit - sizesSelected:', sizesSelected);
-    if (!Array.isArray(sizesSelected) || sizesSelected.length === 0) {
-      console.error('[AdminProducts] No sizes provided! sizesSelected:', sizesSelected);
-      toast({ title: 'Error', description: 'Please add at least one size before saving' });
-      return;
-    }
-    
-    try {
-      // IMPORTANT: Cache the description IMMEDIATELY before sending to backend
-      // This ensures descriptions persist even if backend doesn't return them
-      if (data.description) {
-        const updatedDescriptions = { ...productDescriptions };
-        if (editingId) {
-          // For edits, we have the ID, so save immediately
-          updatedDescriptions[editingId] = data.description;
-          console.log('[AdminProducts] Pre-cached description for EDITING ID', editingId, ':', data.description);
-        } else {
-          // For new products, store with a temp key that we'll update later
-          // We'll use a composite key: timestamp + title to avoid collisions
-          const tempKey = `temp_${Date.now()}_${title.replace(/\s+/g, '_')}`;
-          updatedDescriptions[tempKey] = data.description;
-          console.log('[AdminProducts] Pre-cached description with temp key', tempKey, ':', data.description);
-        }
-        setProductDescriptions(updatedDescriptions);
-        try {
-          localStorage.setItem('productDescriptions', JSON.stringify(updatedDescriptions));
-          console.log('[AdminProducts] Pre-cached descriptions:', updatedDescriptions);
-        } catch (e) {
-          console.error('Error pre-caching descriptions:', e);
-        }
-      }
-      
-      const form = new FormData();
-      // backend expects name price description quantity category size etc.
-      form.append('name', title);
-      form.append('price', String(data.price || '0'));
-      form.append('description', data.description || '');
-      form.append('quantity', String(data.quantity ?? 100));
-      
-      // Always send both regular price and special offer price
-      form.append('original_price', String(data.price || '0')); // Regular price
-      form.append('price', String(data.price || '0')); // Current price
-      
-      // If there's a special offer
-      if (data.discounted_price && Number(data.discounted_price) < Number(data.price)) {
-        form.append('discounted_price', String(data.discounted_price));
-        form.append('price', String(data.discounted_price)); // Set current price to discounted price
-        
-        // Calculate discount percentage
-        const originalPrice = Number(data.price);
-        const discountedPrice = Number(data.discounted_price);
-        const discountPercentage = ((originalPrice - discountedPrice) / originalPrice) * 100;
-        form.append('discount_percentage', String(Math.round(discountPercentage)));
-        
-        // Add end date if provided
-        if (data.end_date) {
-          form.append('end_date', data.end_date);
-        }
-      } else {
-        form.append('discounted_price', '');
-        form.append('discount_percentage', '0');
-        form.append('end_date', '');
-      }
-      form.append('category', data.category || 'unisex');
-      
-      // Always use sizesSelected state since we manage it locally
-      // Send sizes as a semicolon-separated string to avoid FormData.getlist() issues
-      console.log('[AdminProducts] Using sizesSelected:', sizesSelected, 'Type:', typeof sizesSelected, 'Is Array:', Array.isArray(sizesSelected));
-      
-      if (Array.isArray(sizesSelected) && sizesSelected.length > 0) {
-        // Send sizes as a single field with semicolon separator
-        // Backend will need to split by semicolon and validate each
-        const sizeString = sizesSelected.join(';');
-        console.log('[AdminProducts] Appending sizes as string:', sizeString);
-        form.append('size', sizeString);
-        // Log all entries in FormData for debugging
-        console.log('[AdminProducts] ALL FormData entries before sending:');
-        for (let [key, value] of form.entries()) {
-          console.log(`  ${key}: "${value}"`);
-        }
-      } else {
-        console.error('[AdminProducts] No sizes provided! sizesSelected:', sizesSelected, 'Type:', typeof sizesSelected, 'Is Array:', Array.isArray(sizesSelected));
-        toast({ title: 'Error', description: 'Please add at least one size' });
-        return;
-      }
-      
-      form.append('top_notes', data.top_notes || '');
-      form.append('heart_notes', data.heart_notes || '');
-      form.append('base_notes', data.base_notes || '');
-      if (file) {
-        console.log('[AdminProducts] Appending photo file:', file.name, 'Size:', file.size, 'Type:', file.type);
-        form.append('photo', file);
-      } else {
-        console.log('[AdminProducts] No photo file to append');
-      }
-
-      let apiResponse;
-      if (editingId) {
-        form.append('id', String(editingId));
-        // If there's a special offer price, use the special offers endpoint
-        if (data.discounted_price) {
-          apiResponse = await ApiClient.adminUpdateSpecialOffer(editingId, form, token);
-        } else {
-          apiResponse = await ApiClient.adminUpdatePerfume(form, token);
-        }
-      } else {
-        // For new products with special offer price, use special offers endpoint
-        if (data.discounted_price) {
-          apiResponse = await ApiClient.adminAddSpecialOffer(form, token);
-          console.log('[AdminProducts] adminAddSpecialOffer response:', apiResponse);
-        } else {
-          apiResponse = await ApiClient.adminAddPerfume(form, token);
-          console.log('[AdminProducts] adminAddPerfume response:', apiResponse);
-        }
-      }
-      
-      // Try to extract product ID from the response to update temp keys
-      if (apiResponse && !editingId) {
-        const productId = apiResponse.id || apiResponse.perfume_id || (apiResponse.perfume && apiResponse.perfume.id);
-        if (productId && data.description) {
-          const updatedDescriptions = { ...productDescriptions };
-          // Find and update any temp keys for this product
-          Object.keys(updatedDescriptions).forEach(key => {
-            if (key.startsWith('temp_') && updatedDescriptions[key] === data.description) {
-              delete updatedDescriptions[key];
-            }
-          });
-          // Add with real ID
-          updatedDescriptions[productId] = data.description;
-          setProductDescriptions(updatedDescriptions);
-          try {
-            localStorage.setItem('productDescriptions', JSON.stringify(updatedDescriptions));
-            console.log('[AdminProducts] Updated temp key to real ID', productId, ':', data.description);
-          } catch (e) {
-            console.error('Error updating cache with real ID:', e);
-          }
-        }
-      }
-
-      // reload list
-      const res = await ApiClient.adminGetPerfumes(token);
-      if (res && res.perfumes) {
-        setProducts(res.perfumes);
-        
-        // Final pass: map all product IDs to their descriptions
-        const finalDescriptions = { ...productDescriptions };
-        res.perfumes.forEach(p => {
-          // If we already have a description for this product, keep it
-          if (!finalDescriptions[p.id] && productDescriptions[p.id]) {
-            finalDescriptions[p.id] = productDescriptions[p.id];
-          }
-          // If backend returned description, use it
-          if (p.description && p.id) {
-            finalDescriptions[p.id] = p.description;
-          }
-        });
-        
-        setProductDescriptions(finalDescriptions);
-        try {
-          localStorage.setItem('productDescriptions', JSON.stringify(finalDescriptions));
-          console.log('[AdminProducts] Final descriptions cache:', finalDescriptions);
-        } catch (e) {
-          console.error('Error saving final descriptions:', e);
-        }
-      }
-      
-      // Keep form values and uploaded file visible after successful creation
-      // (do not reset form automatically) — admin requested fields/photo to remain.
-      toast({ title: 'Success', description: editingId ? 'Product updated successfully' : 'Product created successfully' });
-    } catch (err) {
-      console.error('Error saving perfume', err);
-      // Clear file on error so it doesn't persist
-      setFile(null);
-      toast({ title: 'Error', description: err.message || 'Failed to save perfume' });
-    }
-  };  const handleEdit = (product) => {
-    console.debug('[AdminProducts:handleEdit] editing product id, incoming size:', product.id, product.size);
-    console.debug('[AdminProducts:handleEdit] product.size type:', typeof product.size, 'is array?', Array.isArray(product.size));
+  // onSubmit handled inline in the form below - removed duplicate definition to avoid syntax/brace issues
+  const handleEdit = (product) => {
+    console.debug('[AdminProducts:handleEdit] editing product id:', product.id);
     // Try to get description from backend or localStorage
     const descriptionToUse = product.description || productDescriptions[product.id] || '';
     reset({
@@ -523,22 +326,7 @@ export default function AdminProducts() {
       heart_notes: product.notes?.heart?.join(',') || '',
       base_notes: product.notes?.base?.join(',') || ''
     });
-    // set local sizesSelected - ONLY from local state, not from form
-    // Handle both array and string formats from backend
-    try {
-      let local = [];
-      if (Array.isArray(product.size)) {
-        local = product.size;
-      } else if (typeof product.size === 'string' && product.size) {
-        // If backend returns comma-separated string, split it
-        local = product.size.split(',').map(s => s.trim()).filter(s => s);
-      }
-      setSizesSelected(local);
-      console.debug('[AdminProducts:handleEdit] setSizesSelected ->', local);
-      // Force remount
-      setSizeVersion(v => v + 1);
-      console.debug('[AdminProducts:handleEdit] forced sizeVersion bump');
-    } catch (e) { console.error(e); }
+    // `size` removed: do not populate any size state
     setEditingId(product.id);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
@@ -636,7 +424,173 @@ export default function AdminProducts() {
 
       <Form {...form}>
         <form 
-          onSubmit={handleSubmit(onSubmit)}
+          onSubmit={handleSubmit(async (data) => {
+            console.log('[AdminProducts] ===== SUBMIT START =====');
+            console.log('[AdminProducts] onSubmit called with data:', data);
+            
+            const title = (data.title || "").trim();
+            if (!title) {
+              console.error('[AdminProducts] Title is empty:', data.title);
+              toast({ title: 'Error', description: 'Title is required' });
+              return;
+            }
+            
+            // `size` removed: no size validation required
+            
+            try {
+              // IMPORTANT: Cache the description IMMEDIATELY before sending to backend
+              // This ensures descriptions persist even if backend doesn't return them
+              if (data.description) {
+                const updatedDescriptions = { ...productDescriptions };
+                if (editingId) {
+                  // For edits, we have the ID, so save immediately
+                  updatedDescriptions[editingId] = data.description;
+                  console.log('[AdminProducts] Pre-cached description for EDITING ID', editingId, ':', data.description);
+                } else {
+                  // For new products, store with a temp key that we'll update later
+                  // We'll use a composite key: timestamp + title to avoid collisions
+                  const tempKey = `temp_${Date.now()}_${title.replace(/\s+/g, '_')}`;
+                  updatedDescriptions[tempKey] = data.description;
+                  console.log('[AdminProducts] Pre-cached description with temp key', tempKey, ':', data.description);
+                }
+                setProductDescriptions(updatedDescriptions);
+                try {
+                  localStorage.setItem('productDescriptions', JSON.stringify(updatedDescriptions));
+                  console.log('[AdminProducts] Pre-cached descriptions:', updatedDescriptions);
+                } catch (e) {
+                  console.error('Error pre-caching descriptions:', e);
+                }
+              }
+              
+              const form = new FormData();
+              // backend expects name price description quantity category size etc.
+              form.append('name', title);
+              form.append('price', String(data.price || '0'));
+              form.append('description', data.description || '');
+              form.append('quantity', String(data.quantity ?? 100));
+              
+              // Always send both regular price and special offer price
+              form.append('original_price', String(data.price || '0')); // Regular price
+              form.append('price', String(data.price || '0')); // Current price
+              
+              // If there's a special offer
+              if (data.discounted_price && Number(data.discounted_price) < Number(data.price)) {
+                form.append('discounted_price', String(data.discounted_price));
+                form.append('price', String(data.discounted_price)); // Set current price to discounted price
+                
+                // Calculate discount percentage
+                const originalPrice = Number(data.price);
+                const discountedPrice = Number(data.discounted_price);
+                const discountPercentage = ((originalPrice - discountedPrice) / originalPrice) * 100;
+                form.append('discount_percentage', String(Math.round(discountPercentage)));
+                
+                // Add end date if provided
+                if (data.end_date) {
+                  form.append('end_date', data.end_date);
+                }
+              } else {
+                form.append('discounted_price', '');
+                form.append('discount_percentage', '0');
+                form.append('end_date', '');
+              }
+              form.append('category', data.category || 'unisex');
+              
+              // `size` removed: do not append size to the payload
+              
+              form.append('top_notes', data.top_notes || '');
+              form.append('heart_notes', data.heart_notes || '');
+              form.append('base_notes', data.base_notes || '');
+              if (file) {
+                console.log('[AdminProducts] Appending photo file:', file.name, 'Size:', file.size, 'Type:', file.type);
+                form.append('photo', file);
+              } else {
+                console.log('[AdminProducts] No photo file to append');
+              }
+
+              let apiResponse;
+              if (editingId) {
+                form.append('id', String(editingId));
+                // If there's a special offer price, use the special offers endpoint
+                if (data.discounted_price) {
+                  apiResponse = await ApiClient.adminUpdateSpecialOffer(editingId, form, token);
+                } else {
+                  apiResponse = await ApiClient.adminUpdatePerfume(form, token);
+                }
+              } else {
+                // For new products with special offer price, use special offers endpoint
+                if (data.discounted_price) {
+                  apiResponse = await ApiClient.adminAddSpecialOffer(form, token);
+                  console.log('[AdminProducts] adminAddSpecialOffer response:', apiResponse);
+                } else {
+                  apiResponse = await ApiClient.adminAddPerfume(form, token);
+                  console.log('[AdminProducts] adminAddPerfume response:', apiResponse);
+                }
+              }
+              
+              // Try to extract product ID from the response to update temp keys
+              if (apiResponse && !editingId) {
+                const productId = apiResponse.id || apiResponse.perfume_id || (apiResponse.perfume && apiResponse.perfume.id);
+                if (productId && data.description) {
+                  const updatedDescriptions = { ...productDescriptions };
+                  // Find and update any temp keys for this product
+                  Object.keys(updatedDescriptions).forEach(key => {
+                    if (key.startsWith('temp_') && updatedDescriptions[key] === data.description) {
+                      delete updatedDescriptions[key];
+                    }
+                  });
+                  // Add with real ID
+                  updatedDescriptions[productId] = data.description;
+                  setProductDescriptions(updatedDescriptions);
+                  try {
+                    localStorage.setItem('productDescriptions', JSON.stringify(updatedDescriptions));
+                    console.log('[AdminProducts] Updated temp key to real ID', productId, ':', data.description);
+                  } catch (e) {
+                    console.error('Error updating cache with real ID:', e);
+                  }
+                }
+              }
+
+              // reload list
+              const res = await ApiClient.adminGetPerfumes(token);
+              if (res && res.perfumes) {
+                setProducts(res.perfumes);
+                
+                // Final pass: map all product IDs to their descriptions
+                const finalDescriptions = { ...productDescriptions };
+                res.perfumes.forEach(p => {
+                  // If we already have a description for this product, keep it
+                  if (!finalDescriptions[p.id] && productDescriptions[p.id]) {
+                    finalDescriptions[p.id] = productDescriptions[p.id];
+                  }
+                  // If backend returned description, use it
+                  if (p.description && p.id) {
+                    finalDescriptions[p.id] = p.description;
+                  }
+                });
+                
+                setProductDescriptions(finalDescriptions);
+                try {
+                  localStorage.setItem('productDescriptions', JSON.stringify(finalDescriptions));
+                  console.log('[AdminProducts] Final descriptions cache:', finalDescriptions);
+                } catch (e) {
+                  console.error('Error saving final descriptions:', e);
+                }
+              }
+              
+              // Keep form values and uploaded file visible after successful creation
+              // (do not reset form automatically) — admin requested fields/photo to remain.
+              toast({ title: 'Success', description: editingId ? 'Product updated successfully' : 'Product created successfully' });
+            } catch (err) {
+              console.error('Error saving perfume', err);
+              // Clear file on error so it doesn't persist
+              setFile(null);
+              toast({ title: 'Error', description: err.message || 'Failed to save perfume' });
+            }
+
+            // Clear form fields and file input after successfully creating a product
+            reset();
+            setFile(null);
+          })}
           style={{ marginBottom: 20, display: "grid", gap: 8 }}
         >
           <FormField
@@ -699,74 +653,7 @@ export default function AdminProducts() {
             )}
           />
 
-          {/* Sizes field - NOT managed by react-hook-form, only by local state */}
-          <div className="space-y-2">
-            <label className="text-sm font-medium">Sizes</label>
-            <p className="text-xs text-gray-500">Format: number + ml (e.g., 50ml, 980ml, 8373ml)</p>
-            <div className="space-y-3">
-              {/* Input field for entering custom sizes */}
-              <div className="flex gap-2">
-                <Input
-                  type="text"
-                  placeholder="e.g., 50ml or 980ml"
-                  value={sizeInput}
-                  onChange={(e) => setSizeInput(e.target.value)}
-                  onKeyPress={(e) => {
-                    if (e.key === 'Enter') {
-                      e.preventDefault();
-                      const trimmed = sizeInput.trim();
-                      if (trimmed && !sizesSelected.includes(trimmed)) {
-                        const updated = [...sizesSelected, trimmed];
-                        setSizesSelected(updated);
-                        setSizeInput('');
-                      }
-                    }
-                  }}
-                />
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => {
-                    const trimmed = sizeInput.trim();
-                    if (trimmed && !sizesSelected.includes(trimmed)) {
-                      const updated = [...sizesSelected, trimmed];
-                      setSizesSelected(updated);
-                      setSizeInput('');
-                    }
-                  }}
-                >
-                  Add Size
-                </Button>
-              </div>
-
-              {/* Display added sizes */}
-              {sizesSelected.length > 0 && (
-                <div className="mt-3 pt-3 border-t">
-                  <div className="text-xs text-gray-600 mb-2">Added Sizes ({sizesSelected.length}):</div>
-                  <div className="flex flex-wrap gap-2">
-                    {sizesSelected.map((size) => (
-                      <div
-                        key={size}
-                        className="inline-flex items-center gap-2 px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm"
-                      >
-                        <span>{size}</span>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            const updated = sizesSelected.filter(s => s !== size);
-                            setSizesSelected(updated);
-                          }}
-                          className="text-blue-600 hover:text-blue-800 font-bold"
-                        >
-                          ×
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
+          
 
           <FormField
             control={control}

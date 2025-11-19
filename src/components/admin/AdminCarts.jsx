@@ -129,7 +129,7 @@ export default function AdminCarts() {
                             <div className="flex-1">
                               <h4 className="font-semibold">{item.perfume_name}</h4>
                               <div className="text-sm text-muted-foreground space-y-1">
-                                <p>Size: {item.size}ml</p>
+                                {/* size removed */}
                                 <p>Quantity: {item.quantity}</p>
                                 <p>Price: {formatPriceINR(item.price)}</p>
                                 <p>Subtotal: {formatPriceINR(item.price * item.quantity)}</p>

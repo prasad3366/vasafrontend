@@ -20,12 +20,18 @@ import { Navigate } from "react-router-dom";
 import ProductDetail from "./pages/ProductDetail";
 import Checkout from "./pages/Checkout";
 import About from "./pages/About";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
+import TermsOfService from "./pages/TermsOfService";
+import CookiePolicy from "./pages/CookiePolicy";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 import NotFound from "./pages/NotFound";
 import LikedProducts from "./pages/LikedProducts";
 import ContactUs from "./pages/ContactUs";
 import Orders from "./pages/Orders";
+import ShippingReturns from './pages/ShippingReturns';
+import TrackOrder from './pages/TrackOrder';
+import FAQPage from './pages/FAQPage';
 import { useEffect } from "react";
 import { setNavigate } from "@/lib/navigation";
 
@@ -79,6 +85,12 @@ const App = () => (
               />
               <Route path="/about" element={<About />} />
               <Route path="/contact-us" element={<ContactUs />} />
+              <Route path="/shipping-returns" element={<ShippingReturns />} />
+              <Route path="/faq" element={<FAQPage />} />
+              <Route path="/track-order" element={<TrackOrder />} />
+              <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+              <Route path="/terms-of-service" element={<TermsOfService />} />
+              <Route path="/cookie-policy" element={<CookiePolicy />} />
               <Route path="/product/:id" element={<ProductDetail />} />
               <Route path="/checkout" element={
                 <ProtectedRoute>

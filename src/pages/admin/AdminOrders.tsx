@@ -142,17 +142,15 @@ const AdminOrders = () => {
                   <TableRow>
                     <TableHead>Item ID</TableHead>
                     <TableHead>Perfume</TableHead>
-                    <TableHead>Size</TableHead>
                     <TableHead>Qty</TableHead>
                     <TableHead>Price</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {(o.items || []).map((it: any) => (
-                    <TableRow key={it.id || `${o.id}-${it.perfume_id}-${it.size}` }>
+                    <TableRow key={it.id || `${o.id}-${it.perfume_id}` }>
                       <TableCell>{it.id || ''}</TableCell>
                       <TableCell>{it.perfume_name || it.name || it.perfume_id}</TableCell>
-                      <TableCell>{it.size}</TableCell>
                       <TableCell>{it.quantity || it.qty || it.q || 1}</TableCell>
                       <TableCell>{it.price || it.unit_price || it.total_price}</TableCell>
                     </TableRow>

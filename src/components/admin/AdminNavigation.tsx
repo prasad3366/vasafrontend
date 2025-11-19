@@ -20,6 +20,11 @@ const AdminNavigation = () => {
       icon: BoxIcon,
     },
     {
+      href: "/admin/analytics",
+      label: "Analytics",
+      icon: LineChartIcon,
+    },
+    {
       href: "/admin/sections",
       label: "Manage Sections",
       icon: TagIcon,
@@ -37,13 +42,15 @@ const AdminNavigation = () => {
   ];
 
   return (
-    <div className="flex gap-2 mb-6">
+    <div className="flex gap-3 mb-6 items-center">
       {menuItems.map((item) => {
         const Icon = item.icon;
         return (
           <Button
             key={item.href}
             variant={isActive(item.href) ? "default" : "outline"}
+            size={"lg"}
+            className={isActive(item.href) ? "rounded-full shadow-sm px-4" : "rounded-full px-4"}
             asChild
           >
             <Link to={item.href} className="flex items-center gap-2">

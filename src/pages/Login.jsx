@@ -423,7 +423,7 @@ export default function Login() {
       <Footer />
 
       {/* Global styles for fonts and keyframe animations */}
-      <style jsx global="true">{`
+      <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Inter:wght@300;400;500;600&display=swap');
 
         :root {

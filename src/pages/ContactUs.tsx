@@ -5,6 +5,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { MapPin, Phone, Mail } from "lucide-react";
 import Navbar from "@/components/Navbar";
+import { Link } from 'react-router-dom';
+import { useAuth } from '@/contexts/AuthContext';
 import Footer from "@/components/Footer";
 
 const ContactUs = () => {
@@ -59,9 +61,25 @@ const ContactUs = () => {
     }));
   };
 
+  const { user } = useAuth ? useAuth() : { user: null };
+
   return (
     <div className="min-h-screen bg-background">
-      <Navbar />
+      {user?.isAdmin ? (
+        <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur">
+          <nav className="container mx-auto px-4">
+            <div className="flex h-16 items-center justify-between">
+              <Link to="/" className="flex items-center">
+                <h1 className="text-3xl md:text-4xl font-brand font-black tracking-wider bg-gradient-to-r from-accent to-yellow-600 bg-clip-text text-transparent">
+                  VASA
+                </h1>
+              </Link>
+            </div>
+          </nav>
+        </header>
+      ) : (
+        <Navbar />
+      )}
       
       <main className="container mx-auto px-4 py-12">
         <div className="text-center mb-12">
@@ -149,7 +167,6 @@ const ContactUs = () => {
                   placeholder="your.email@example.com"
                 />
               </div>
-
               <div>
                 <label htmlFor="subject" className="block text-sm font-medium mb-1">
                   Subject

@@ -55,20 +55,18 @@ const ProductCard = ({ product }: ProductCardProps) => {
       return;
     }
     
-    const size = typeof product.size === 'string' ? product.size : (product.size?.[0] || 'Standard');
-    addItem(product, size);
+    // size removed: add product without size
+    addItem(product);
     toast({ title: "Added to cart", description: `${product.name} has been added to your cart.` });
   };
 
   const handleBuyNow = (e: React.MouseEvent) => {
     e.stopPropagation();
-    const size = typeof product.size === 'string' ? product.size : (product.size?.[0] || 'Standard');
-    // Store the product and go directly to checkout
+    // Store the product and go directly to checkout (size removed)
     const singleItemCart = {
       items: [{
         ...product,
         quantity: 1,
-        selectedSize: size,
         price: product.price
       }],
       totalPrice: product.price
