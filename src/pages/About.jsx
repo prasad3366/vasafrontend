@@ -12,7 +12,7 @@ export default function About() {
     <div className="min-h-screen bg-gray-50">
       {user?.isAdmin ? (
         <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur">
-          <nav className="container mx-auto px-4">
+          <nav className="container mx-auto px-8">
             <div className="flex h-16 items-center justify-between">
               <Link to="/" className="flex items-center">
                 <h1 className="text-3xl md:text-4xl font-brand font-black tracking-wider bg-gradient-to-r from-accent to-yellow-600 bg-clip-text text-transparent">
@@ -25,10 +25,10 @@ export default function About() {
       ) : (
         <Navbar />
       )}
-      <main className="max-w-7xl mx-auto px-4 py-16">
+      <main className="max-w-7xl mx-auto px-8 py-16">
         {/* Top hero: About VASA Perfume */}
         <section className="text-center mb-12">
-          <h1 style={{ color: '#16a34a' }} className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-black text-green-600 mb-6 tracking-tight">About VASA Perfume</h1>
+          <h1 style={{ color: '#16a34a' }} className="text-3xl sm:text-4xl md:text-5xl lg:text-5xl xl:text-5xl font-black text-green-600 mb-6 tracking-tight">About VASA Perfume</h1>
           <p className="max-w-3xl mx-auto text-lg text-muted-foreground">
             For over 5 years, we've been crafting luxurious perfumes using time-honoured blending techniques and the finest ingredients. Our passion for scent and dedication to quality has made VASA a trusted name among fragrance lovers.
           </p>

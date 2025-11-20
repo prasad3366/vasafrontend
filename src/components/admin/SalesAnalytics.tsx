@@ -44,6 +44,7 @@ ChartJS.register(
   Filler,
 );
 import { useAuth } from '@/contexts/AuthContext';
+import { useNavigate, Link } from 'react-router-dom';
 
 interface SalesData {
   totalSales: number;
@@ -69,6 +70,7 @@ const SalesAnalytics = () => {
   const { toast } = useToast();
 
   const { token } = useAuth();
+  const navigate = useNavigate();
 
   useEffect(() => {
     loadSalesData();
@@ -165,9 +167,31 @@ const SalesAnalytics = () => {
 
   return (
     <div className="space-y-6 mt-6">
+      <div className="flex items-center gap-3">
+          <Link to="/admin/products" className="inline-flex items-center gap-2 px-4 py-2 rounded-full shadow-sm text-sm font-medium bg-white text-black border hover:bg-gray-50"> 
+            <span className="hidden sm:inline">Products</span>
+            <span className="sm:hidden">Prods</span>
+          </Link>
+          <Link to="/admin/analytics" aria-current="page" className="inline-flex items-center gap-2 px-4 py-2 rounded-full shadow-sm text-sm font-medium bg-emerald-500 text-white"> 
+            <span className="hidden sm:inline">Analytics</span>
+            <span className="sm:hidden">Data</span>
+          </Link>
+          <Link to="/admin/sections" className="inline-flex items-center gap-2 px-4 py-2 rounded-full shadow-sm text-sm font-medium bg-white text-black border hover:bg-gray-50"> 
+            <span className="hidden sm:inline">Manage Sections</span>
+            <span className="sm:hidden">Manage</span>
+          </Link>
+          <Link to="/admin/reviews" className="inline-flex items-center gap-2 px-4 py-2 rounded-full shadow-sm text-sm font-medium bg-white text-black border hover:bg-gray-50"> 
+            <span className="hidden sm:inline">Reviews</span>
+            <span className="sm:hidden">Rev</span>
+          </Link>
+          <Link to="/admin/orders" className="inline-flex items-center gap-2 px-4 py-2 rounded-full shadow-sm text-sm font-medium bg-white text-black border hover:bg-gray-50"> 
+            <span className="hidden sm:inline">Orders</span>
+            <span className="sm:hidden">Ordr</span>
+          </Link>
+        </div>
       {/* Filters */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 pl-2 sm:pl-4">
           <label className="text-sm font-medium">Range</label>
           <Select value={preset} onValueChange={(v) => setPreset(v)}>
             <SelectTrigger className="w-48 rounded-lg h-11 px-3">

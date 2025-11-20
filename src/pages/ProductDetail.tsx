@@ -154,6 +154,7 @@ export default function ProductDetail() {
   }
 
   const handleAddToCart = () => {
+    // addItem expects a single argument (the product); quantity is part of the product object
     addItem(product);
     toast({
       title: "Added to cart",

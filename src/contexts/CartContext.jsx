@@ -149,7 +149,7 @@ export function CartProvider({ children }) {
   }, [token]);
 
   // Add item to cart
-  const addItem = async (product) => {
+  const addItem = async (product, quantity = 1) => {
     if (!isAuthenticated || !token) {
       toast({
         title: 'Authentication Required',
@@ -167,16 +167,23 @@ export function CartProvider({ children }) {
         perfume_id: product.id,
         perfume_name: product.name,
         price: product.price,
-        quantity: 1,
+        quantity: Number(quantity) || 1,
         photo_url: product.image,
         in_stock: true
       };
       
-      setCartItems(current => [...current, newItem]);
+      setCartItems(current => {
+        // If item already exists, merge quantities
+        const exists = current.find(it => it.perfume_id === product.id);
+        if (exists) {
+          return current.map(it => it.perfume_id === product.id ? { ...it, quantity: (Number(it.quantity) || 0) + Number(newItem.quantity) } : it);
+        }
+        return [...current, newItem];
+      });
 
       const res = await ApiClient.addToCart([{ 
         perfume_id: product.id, 
-        quantity: 1
+        quantity: Number(quantity) || 1
       }], token);
       
       // Fetch the latest cart state from server to ensure consistency

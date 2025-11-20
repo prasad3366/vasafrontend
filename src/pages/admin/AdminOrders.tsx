@@ -36,7 +36,15 @@ const AdminOrders = () => {
       });
       const res = await ApiClient.adminGetAllOrders(page, limit, statusFilter, start, end, token);
       // Expecting { orders: [...], meta: { page, limit, total, pages } }
-      setOrders(res.orders || res.data || []);
+      const fetched = res.orders || res.data || [];
+      // Sort orders by date descending (most recent first). Try several common date fields.
+      const getOrderTime = (o: any) => {
+        const d = o.created_at ?? o.createdAt ?? o.placed_at ?? o.placedAt ?? o.date ?? o.order_date ?? '';
+        const t = Date.parse(d);
+        return isNaN(t) ? 0 : t;
+      };
+      fetched.sort((a: any, b: any) => getOrderTime(b) - getOrderTime(a));
+      setOrders(fetched);
       if (res.meta) {
         setTotalPages(res.meta.pages || 1);
       }
@@ -48,9 +56,88 @@ const AdminOrders = () => {
     }
   };
 
+  // Export all orders to CSV (Excel-friendly). Fetches all pages.
+  const exportAllOrders = async () => {
+    if (!token) return;
+    setLoading(true);
+    try {
+      const all: any[] = [];
+      let p = 1;
+      const pageLimit = 200; // fetch in reasonably large pages
+      while (true) {
+        const res = await ApiClient.adminGetAllOrders(p, pageLimit, statusFilter, formatDate(dateRange?.from), formatDate(dateRange?.to), token);
+        const pageOrders = res.orders || res.data || [];
+        all.push(...pageOrders);
+        // stop when no more pages or fewer results returned
+        if (!res.meta || (res.meta.pages && p >= res.meta.pages) || pageOrders.length < pageLimit) break;
+        p += 1;
+      }
+
+      if (all.length === 0) {
+        toast({ title: 'No orders', description: 'No orders to export for the selected filters.' });
+        return;
+      }
+
+      // Build CSV
+      const headers = [
+        'Order ID','Placed At','Status','Username','Total Amount','Shipping Cost','Tax Amount','Shipping Name','Shipping Address','Shipping City','Shipping State','Shipping Zip','Shipping Phone','Shipping Email','Items'
+      ];
+
+      const rows = all.map((o: any) => {
+        const items = (o.items || []).map((it: any) => `${it.perfume_name || it.name || it.product_name || it.perfume_id} x${it.quantity || it.qty || 1}`).join(' | ');
+        const shippingName = `${o.shipping_first_name || ''} ${o.shipping_last_name || ''}`.trim();
+        const address = `${o.shipping_address || ''}`;
+        return [
+          safeCsv(o.id),
+          safeCsv(o.created_at || o.placed_at || ''),
+          safeCsv(o.status || ''),
+          safeCsv(o.username || o.user_name || `User ${o.user_id}` || ''),
+          safeCsv(o.total_amount ?? o.total ?? ''),
+          safeCsv(o.shipping_cost ?? ''),
+          safeCsv(o.tax_amount ?? ''),
+          safeCsv(shippingName),
+          safeCsv(address),
+          safeCsv(o.shipping_city || ''),
+          safeCsv(o.shipping_state || ''),
+          safeCsv(o.shipping_zip || ''),
+          safeCsv(o.shipping_phone || ''),
+          safeCsv(o.shipping_email || ''),
+          safeCsv(items),
+        ].join(',');
+      });
+
+      function safeCsv(v: any) {
+        if (v === null || v === undefined) return '';
+        const s = String(v).replace(/"/g, '""');
+        // wrap in quotes if contains comma or newline
+        return (`"${s}"`);
+      }
+
+      const csvContent = [headers.map(h => `"${h}"`).join(','), ...rows].join('\n');
+
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      const stamp = new Date().toISOString().slice(0,19).replace(/[:T]/g,'-');
+      a.download = `vasa-orders-${stamp}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+
+      toast({ title: 'Export started', description: `Exported ${all.length} orders. File download should begin.` });
+    } catch (err: any) {
+      console.error('Failed to export orders', err);
+      toast({ title: 'Error', description: 'Failed to export orders', variant: 'destructive' });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
     loadOrders();
-  }, [token, page]);
+  }, [token, page, dateRange, statusFilter]);
 
   const prev = () => setPage(p => Math.max(1, p - 1));
   const next = () => setPage(p => Math.min(totalPages || 1, p + 1));
@@ -96,7 +183,6 @@ const AdminOrders = () => {
               onClick={() => { 
                 console.debug('[AdminOrders] Apply button clicked with filters:', { statusFilter, dateRange });
                 setPage(1);
-                setTimeout(() => loadOrders(), 0);
               }}
             >Apply</Button>
             <Button
@@ -104,11 +190,21 @@ const AdminOrders = () => {
               variant="outline"
               onClick={() => { 
                 console.debug('[AdminOrders] Clear button clicked');
+                // Reset filters and show today's orders
                 setStatusFilter(undefined);
-                setDateRange(undefined);
+                const today = new Date();
+                setDateRange({ from: today, to: today });
                 setPage(1);
               }}
             >Clear</Button>
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => {
+                console.debug('[AdminOrders] Export button clicked - exporting orders');
+                exportAllOrders();
+              }}
+            >Export</Button>
           </div>
         </div>
 

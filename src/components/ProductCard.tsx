@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Star, Heart, ShoppingCart } from "lucide-react";
+import { Star, Heart, ShoppingCart, Minus, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
@@ -42,10 +42,22 @@ const ProductCard = ({ product }: ProductCardProps) => {
     fetchReviews();
   }, [product.id]);
   const navigate = useNavigate();
-  const { addItem } = useCart();
+  const { addItem, items: cartItems, updateQuantity, removeItem } = useCart();
   const { toast } = useToast();
   const { isAuthenticated } = useAuth();
   const { addToLiked, removeFromLiked, isLiked } = useLiked();
+
+  const [quantity, setQuantity] = useState<number>(0);
+
+  // initialize quantity from cart if item already present
+  useEffect(() => {
+    try {
+      const existing = cartItems.find((it: any) => Number(it.perfume_id) === Number(product.id));
+      setQuantity(existing ? Number(existing.quantity) : 0);
+    } catch (e) {
+      setQuantity(0);
+    }
+  }, [cartItems, product.id]);
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -56,8 +68,43 @@ const ProductCard = ({ product }: ProductCardProps) => {
     }
     
     // size removed: add product without size
-    addItem(product);
+    addItem({ ...product, quantity });
     toast({ title: "Added to cart", description: `${product.name} has been added to your cart.` });
+  };
+
+  const increase = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!isAuthenticated) {
+      toast({ title: "Please login", description: "You must be logged in to change quantities." });
+      navigate('/login');
+      return;
+    }
+    if (product.quantity && quantity >= product.quantity) return;
+    const newQ = quantity + 1;
+    const existing = cartItems.find((it: any) => Number(it.perfume_id) === Number(product.id));
+    if (existing) {
+      await updateQuantity(Number(product.id), newQ);
+    }
+    setQuantity(newQ);
+  };
+
+  const decrease = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!isAuthenticated) {
+      toast({ title: "Please login", description: "You must be logged in to change quantities." });
+      navigate('/login');
+      return;
+    }
+    const newQ = Math.max(0, quantity - 1);
+    const existing = cartItems.find((it: any) => Number(it.perfume_id) === Number(product.id));
+    if (existing) {
+      if (newQ === 0) {
+        await removeItem(Number(product.id));
+      } else {
+        await updateQuantity(Number(product.id), newQ);
+      }
+    }
+    setQuantity(newQ);
   };
 
   const handleBuyNow = (e: React.MouseEvent) => {
@@ -201,14 +248,27 @@ const ProductCard = ({ product }: ProductCardProps) => {
               );
             })()}
           </div>
-          <Button
-            size="icon"
-            variant="secondary"
-            onClick={handleAddToCart}
-            className="h-8 w-8"
-          >
-            <ShoppingCart className="h-4 w-4" />
-          </Button>
+
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 border rounded px-2 py-1">
+              <button type="button" onClick={decrease} className="p-1" aria-label="Decrease quantity">
+                <Minus className="h-4 w-4" />
+              </button>
+              <span className="w-6 text-center text-sm">{quantity}</span>
+              <button type="button" onClick={increase} className="p-1" aria-label="Increase quantity">
+                <Plus className="h-4 w-4" />
+              </button>
+            </div>
+
+            <Button
+              size="icon"
+              variant="secondary"
+              onClick={handleAddToCart}
+              className="h-8 w-8"
+            >
+              <ShoppingCart className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
 
         <Button 

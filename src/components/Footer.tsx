@@ -4,6 +4,14 @@ import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { Link } from 'react-router-dom';
 
+const scrollToTop = () => {
+  try {
+    window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+  } catch (e) {
+    window.scrollTo(0, 0);
+  }
+};
+
 const Footer = () => {
   return (
     <footer className="bg-card border-t">
@@ -11,9 +19,12 @@ const Footer = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-8">
           {/* Brand */}
           <div>
-            <h3 className="text-2xl font-bold mb-4" style={{ color: '#111827' }}>
-              VASA
-            </h3>
+            <div className="flex items-center gap-3 mb-4">
+              <img src="/logo.jpg" alt="VASA logo" className="h-9 w-9 object-cover rounded-md" />
+              <h3 className="text-2xl font-bold" style={{ color: '#111827' }}>
+                VASA
+              </h3>
+            </div>
             <p className="text-muted-foreground mb-4">
               Luxury perfumes crafted for the exceptional. Discover your signature scent.
             </p>
@@ -34,10 +45,10 @@ const Footer = () => {
           <div>
             <h4 className="font-semibold text-lg mb-4">Shop</h4>
             <ul className="space-y-2 text-muted-foreground">
-              <li><a href="/products" className="hover:text-primary transition-colors">All Products</a></li>
-              <li><a href="/products?section=best-sellers" className="hover:text-primary transition-colors">Best Sellers</a></li>
-              <li><a href="/products?section=new-arrivals" className="hover:text-primary transition-colors">New Arrivals</a></li>
-              <li><a href="/products?section=special-offers" className="hover:text-primary transition-colors">Special Offers</a></li>
+              <li><Link to="/products" onClick={scrollToTop} className="hover:text-primary transition-colors">All Products</Link></li>
+              <li><Link to="/products?section=best-sellers" onClick={scrollToTop} className="hover:text-primary transition-colors">Best Sellers</Link></li>
+              <li><Link to="/products?section=new-arrivals" onClick={scrollToTop} className="hover:text-primary transition-colors">New Arrivals</Link></li>
+              <li><Link to="/products?section=special-offers" onClick={scrollToTop} className="hover:text-primary transition-colors">Special Offers</Link></li>
             </ul>
           </div>
 
@@ -45,10 +56,10 @@ const Footer = () => {
           <div>
             <h4 className="font-semibold text-lg mb-4">Customer Care</h4>
             <ul className="space-y-2 text-muted-foreground">
-              <li><Link to="/contact-us" className="hover:text-primary transition-colors">Contact Us</Link></li>
-              <li><Link to="/shipping-returns" className="hover:text-primary transition-colors">Shipping & Returns</Link></li>
-              <li><Link to="/faq" className="hover:text-primary transition-colors">FAQ</Link></li>
-              <li><Link to="/track-order" className="hover:text-primary transition-colors">Track Order</Link></li>
+              <li><Link to="/contact-us" onClick={scrollToTop} className="hover:text-primary transition-colors">Contact Us</Link></li>
+              <li><Link to="/shipping-returns" onClick={scrollToTop} className="hover:text-primary transition-colors">Shipping & Returns</Link></li>
+              <li><Link to="/faq" onClick={scrollToTop} className="hover:text-primary transition-colors">FAQ</Link></li>
+              <li><Link to="/track-order" onClick={scrollToTop} className="hover:text-primary transition-colors">Track Order</Link></li>
             </ul>
           </div>
 
@@ -86,9 +97,9 @@ const Footer = () => {
         <div className="flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-muted-foreground">
           <p>&copy; 2025 VASA Perfumes. All rights reserved.</p>
           <div className="flex gap-6">
-            <Link to="/privacy-policy" className="hover:text-primary transition-colors">Privacy Policy</Link>
-            <Link to="/terms-of-service" className="hover:text-primary transition-colors">Terms of Service</Link>
-            <Link to="/cookie-policy" className="hover:text-primary transition-colors">Cookie Policy</Link>
+            <Link to="/privacy-policy" onClick={scrollToTop} className="hover:text-primary transition-colors">Privacy Policy</Link>
+            <Link to="/terms-of-service" onClick={scrollToTop} className="hover:text-primary transition-colors">Terms of Service</Link>
+            <Link to="/cookie-policy" onClick={scrollToTop} className="hover:text-primary transition-colors">Cookie Policy</Link>
           </div>
         </div>
       </div>

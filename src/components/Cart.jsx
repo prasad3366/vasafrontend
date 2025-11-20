@@ -1,4 +1,4 @@
-import { ShoppingCart, X, Minus, Plus, Trash2 } from "lucide-react";
+import { ShoppingCart, X, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Badge } from "@/components/ui/badge";
@@ -14,23 +14,7 @@ export default function Cart() {
   const { toast } = useToast();
   const navigate = useNavigate();
 
-  const handleQuantityUpdate = async (productId, newQuantity) => {
-    try {
-      // Get the item to access its size
-      const item = items.find(i => i.perfume_id === productId);
-      if (!item) {
-        console.error('Item not found:', productId);
-        return;
-      }
-      await updateQuantity(productId, newQuantity);
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to update quantity",
-        variant: "destructive",
-      });
-    }
-  };
+  // Quantity is managed from product cards; cart shows final quantities.
 
   const handleRemove = async (productId) => {
     try {
@@ -108,27 +92,9 @@ export default function Cart() {
                       <p className="font-bold">{formatPriceINR(item.price)}</p>
                     
                     <div className="flex items-center gap-2 mt-2">
-                      <div className="flex items-center gap-2">
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          className="h-8 w-8"
-                          onClick={() => handleQuantityUpdate(item.perfume_id, item.quantity - 1)}
-                          disabled={item.quantity <= 1}
-                        >
-                          <Minus className="h-4 w-4" />
-                        </Button>
-                        <span className="w-8 text-center">{item.quantity}</span>
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          className="h-8 w-8"
-                          onClick={() => handleQuantityUpdate(item.perfume_id, item.quantity + 1)}
-                          disabled={!item.in_stock || (item.stock && item.quantity >= item.stock)}
-                        >
-                          <Plus className="h-4 w-4" />
-                        </Button>
-                      </div>
+                        <div className="flex items-center gap-2">
+                          <span className="w-8 text-center">{item.quantity}</span>
+                        </div>
                       <div className="flex items-center gap-2 ml-auto">
                         <Button
                           variant="default"

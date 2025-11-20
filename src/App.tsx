@@ -34,6 +34,7 @@ import TrackOrder from './pages/TrackOrder';
 import FAQPage from './pages/FAQPage';
 import { useEffect } from "react";
 import { setNavigate } from "@/lib/navigation";
+import ScrollToTop from '@/components/ScrollToTop';
 
 const queryClient = new QueryClient();
 
@@ -50,6 +51,7 @@ const App = () => (
   <BrowserRouter>
     {/* RouterBridge: registers react-router's navigate with our navigation helper */}
     <RouterBridge />
+    <ScrollToTop behavior="auto" />
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <CartProvider>

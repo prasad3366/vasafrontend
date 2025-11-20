@@ -9,7 +9,6 @@ import {
   AlertDialogTitle,
   AlertDialogCancel,
   AlertDialogAction,
-  AlertDialogDescription,
 } from './ui/alert-dialog';
 import { Button } from './ui/button';
 
@@ -19,7 +18,7 @@ interface ProfileModalProps {
 }
 
 export const ProfileModal: React.FC<ProfileModalProps> = ({ open, onClose }) => {
-  const { user } = useAuth ? useAuth() : { user: null };
+  const { user, token } = useAuth ? useAuth() : { user: null, token: null };
   const [profile, setProfile] = useState<any>(null);
   const [form, setForm] = useState({
     email: '',
@@ -34,7 +33,8 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ open, onClose }) => 
   useEffect(() => {
     if (open) {
       setLoading(true);
-        axios.get(`${import.meta.env.VITE_API_BASE_URL || ''}/profile`)
+      const API_BASE = import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE_URL || '';
+        axios.get(`${API_BASE}/profile`, { headers: { Authorization: token || '' } })
           .then((res: any) => {
             const profileData = res.data && res.data.profile ? res.data.profile : {};
             console.log('Fetched profile:', profileData); // Debug log
@@ -65,19 +65,8 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ open, onClose }) => 
     setError('');
     setSuccess('');
     try {
-      // Only send fields that are not empty
-      const updateData: any = {};
-      if (form.email) updateData.email = form.email;
-      if (form.phone_number) updateData.phone_number = form.phone_number;
-      if (form.password) updateData.password = form.password;
-      if (form.confirm_password) updateData.confirm_password = form.confirm_password;
-      const token = localStorage.getItem('token');
-      const res = await axios.put('http://127.0.0.1:5000/profile/update', updateData, {
-        headers: {
-          Authorization: token || '',
-          'Content-Type': 'application/json',
-        },
-      });
+      const API_BASE = import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE_URL || '';
+      const res = await axios.put(`${API_BASE}/profile/update`, form, { headers: { Authorization: token || '' } });
       setSuccess((res.data as { message?: string })?.message || 'Profile updated!');
     } catch (err: any) {
       setError(err.response?.data?.error || 'Update failed');
@@ -92,9 +81,6 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ open, onClose }) => 
         <AlertDialogHeader>
           <AlertDialogTitle>My Profile</AlertDialogTitle>
         </AlertDialogHeader>
-        <AlertDialogDescription>
-          View and update your profile information. You can change your email, phone number, or password here.
-        </AlertDialogDescription>
         <div className="min-w-[320px]">
           {loading ? <div>Loading...</div> : profile && (
             <form onSubmit={handleUpdate} className="flex flex-col gap-3">
